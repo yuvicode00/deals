@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: deal-studio
+    runtime: docker
+    region: frankfurt          # closest to Israel; change if you prefer
+    plan: free                 # free = sleeps when idle (slow first load). Upgrade to "starter" (~$7/mo) for always-on.
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false            # paste in the Render dashboard (secret)
+      - key: APP_PASSWORD
+        sync: false            # the access password you give clients/partners
+      - key: SESSION_SECRET
+        generateValue: true    # Render generates a strong random value
+      - key: COOKIE_SECURE
+        value: "1"
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-4-6
+      - key: MAX_EXTRACTS_PER_HOUR
+        value: "60"
