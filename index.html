@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Studio — דוחות ← אקסל + מצגת</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#070A12;--bg2:#0B1020;--panel:#0F1626;--panel2:#141D31;--hair:rgba(255,255,255,.08);
+--line:rgba(199,162,75,.18);--ink:#EAEEF7;--soft:#C4CCDC;--mut:#8A95AC;--faint:#5C6577;
+--gold:#C8A24B;--gold2:#E4C778;--blue:#4F8BFF;--pos:#34D399;--neg:#F1746B;
+--gg:linear-gradient(135deg,#E4C778,#C8A24B 55%,#9C7C2E);--gb:linear-gradient(135deg,#6FA8FF,#4F8BFF 60%,#2C63D6);
+--font:'Heebo',sans-serif;--mono:'Space Mono',monospace}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);color:var(--ink);min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased;
+background:radial-gradient(1100px 700px at 90% -10%,rgba(79,139,255,.08),transparent 60%),
+radial-gradient(1000px 760px at -5% 110%,rgba(199,162,75,.09),transparent 55%),linear-gradient(180deg,var(--bg),var(--bg2))}
+.wrap{max-width:920px;margin:0 auto;padding:38px 26px 80px}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:20px}
+.brand .dot{width:14px;height:14px;border-radius:4px;background:var(--gg);transform:rotate(45deg);box-shadow:0 0 16px rgba(199,162,75,.6)}
+.brand small{display:block;font-weight:500;font-size:11px;letter-spacing:.14em;color:var(--mut)}
+.lead{color:var(--mut);font-size:15.5px;margin:16px 0 26px;max-width:680px}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:16px;padding:24px;margin-bottom:20px}
+.card h2{font-size:17px;display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.card h2 .n{width:26px;height:26px;border-radius:8px;background:var(--gg);color:#0A0E17;display:grid;place-items:center;font-weight:800;font-size:13px;font-family:var(--mono)}
+.card .sub{color:var(--mut);font-size:13px;margin:2px 0 16px 36px}
+.drop{border:1.6px dashed var(--line);border-radius:13px;padding:30px;text-align:center;cursor:pointer;transition:.18s;background:rgba(255,255,255,.02)}
+.drop:hover,.drop.over{border-color:var(--gold);background:rgba(199,162,75,.06)}
+.drop svg{width:34px;height:34px;stroke:var(--gold2);fill:none;stroke-width:1.5;margin-bottom:8px}
+.drop .t{font-weight:600;font-size:15px}.drop .s{font-size:12.5px;color:var(--mut);margin-top:5px}
+.files{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.fchip{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--hair);border-radius:10px;padding:9px 13px;font-size:13.5px}
+.fchip .x{margin-inline-start:auto;cursor:pointer;color:var(--neg);font-size:18px;line-height:1}
+.fchip .sz{color:var(--faint);font-size:12px;font-family:var(--mono)}
+.row{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+.btn{font-family:var(--font);font-weight:700;font-size:14.5px;border-radius:12px;padding:13px 24px;cursor:pointer;border:1px solid var(--hair);background:var(--panel2);color:var(--ink);transition:.16s;display:inline-flex;align-items:center;gap:9px}
+.btn:hover{background:#1a2540}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--gg);color:#0A0E17;border:0;box-shadow:0 12px 30px -14px rgba(199,162,75,.6)}
+.btn.blue{background:var(--gb);color:#04122e;border:0}
+.btn.ghost{background:transparent}
+.stat{margin-top:14px;font-size:13.5px;display:none;align-items:center;gap:10px}
+.stat.show{display:flex}
+.spin{width:17px;height:17px;border:2px solid rgba(199,162,75,.3);border-top-color:var(--gold);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.note{font-size:12.5px;color:var(--faint);background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:10px;padding:11px 14px;margin-top:14px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.f{display:flex;flex-direction:column;gap:6px}.f.full{grid-column:1/-1}
+.f label{font-size:12.5px;font-weight:600;color:var(--soft)}
+input,textarea{width:100%;background:var(--bg2);border:1px solid var(--hair);border-radius:10px;color:var(--ink);font-family:var(--font);font-size:14px;padding:11px 13px;outline:none;transition:.15s}
+input:focus,textarea:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(199,162,75,.13)}
+input.mono{font-family:var(--mono)}
+textarea{min-height:70px;resize:vertical}
+.grp{margin-top:8px}.grp h3{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);margin:18px 0 10px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.seg{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:8px}
+.seg .rm{cursor:pointer;color:var(--neg);border:1px solid var(--hair);border-radius:8px;width:34px;height:40px;display:grid;place-items:center;background:rgba(241,116,107,.08)}
+.add{background:rgba(199,162,75,.1);border:1px dashed var(--line);color:var(--gold2);border-radius:10px;padding:9px 16px;font-family:var(--font);font-weight:600;font-size:13px;cursor:pointer}
+.dlbar{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:6px}
+.dl{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+.dl svg{width:26px;height:26px;stroke:var(--gold2);fill:none;stroke-width:1.5;margin-bottom:8px}
+.dl h4{font-size:15px}.dl p{font-size:12px;color:var(--mut);margin:5px 0 13px}
+#review{display:none}
+.toast{position:fixed;inset-block-end:24px;inset-inline:0;margin:auto;width:max-content;max-width:90%;background:#16203A;border:1px solid var(--line);border-radius:12px;padding:13px 22px;font-size:14px;box-shadow:0 18px 40px -16px #000;transform:translateY(80px);opacity:0;transition:.3s;z-index:9}
+.toast.show{transform:none;opacity:1}
+.toast.err{border-color:rgba(241,116,107,.5)}
+@media(max-width:720px){.fields,.dlbar{grid-template-columns:1fr}.seg{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="dot"></span><div>Deal Studio<small>דוחות כספיים ← אקסל + מצגת</small></div></div>
+  <p class="lead">העלה דוחות כספיים של החברה (כמה שנים, PDF או תמונות). Claude יקרא אותם, יחלץ את המספרים, ותוכל להוריד את האקסל המלא ואת המצגת — מוכנים.</p>
+
+  <div class="card">
+    <h2><span class="n">1</span> העלאת דוחות</h2>
+    <div class="sub">אפשר כמה קבצים יחד (שנים שונות). PDF · PNG · JPG.</div>
+    <div class="drop" id="drop">
+      <svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>
+      <div class="t">גרור לכאן דוחות, או לחץ לבחירה</div>
+      <div class="s">ככל שיש יותר שנים — האקסל והמצגת מדויקים יותר</div>
+      <input type="file" id="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple hidden>
+    </div>
+    <div class="files" id="files"></div>
+    <div class="row">
+      <button class="btn primary" id="process" disabled>עבד דוחות עם AI ←</button>
+      <button class="btn ghost" id="manual">דלג והזן ידנית</button>
+    </div>
+    <div class="stat" id="stat"></div>
+    <div class="note" id="keynote" style="display:none">⚠️ לא הוגדר מפתח API בשרת. הפעל עם <span style="font-family:var(--mono)">ANTHROPIC_API_KEY</span> כדי לקרוא דוחות אוטומטית (אפשר עדיין להזין ידנית ולהפיק).</div>
+  </div>
+
+  <div class="card" id="review">
+    <h2><span class="n">2</span> סקירה ועריכה</h2>
+    <div class="sub" id="exsum">בדוק את הנתונים שחולצו וערוך לפי הצורך. שדות שלא נמצאו בדוח ימולאו בערכי ברירת מחדל בתוצרים.</div>
+    <div id="form"></div>
+  </div>
+
+  <div class="card" id="downloads" style="display:none">
+    <h2><span class="n">3</span> הורדה</h2>
+    <div class="sub">התוצרים נבנים מהנתונים שלמעלה. האקסל מחושב מחדש אוטומטית בפתיחה ב-Excel/LibreOffice.</div>
+    <div class="dlbar">
+      <div class="dl"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg><h4>אקסל מלא</h4><p>7 גיליונות, נוסחאות חיות</p><button class="btn primary" data-dl="/api/excel">הורד .xlsx</button></div>
+      <div class="dl"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/></svg><h4>מצגת מאוכלסת</h4><p>12 שקפים, HTML</p><button class="btn blue" data-dl="/api/deck">הורד מצגת</button></div>
+      <div class="dl"><svg viewBox="0 0 24 24"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg><h4>חבילה מלאה</h4><p>אקסל + מצגת + JSON</p><button class="btn" data-dl="/api/package">הורד ZIP</button></div>
+    </div>
+    <div class="stat" id="dlstat"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+let selected=[];           // File[]
+let pitch={};              // working pitch-data (partial; backend completes it)
+
+/* dot-path helpers */
+const norm=p=>p.replace(/\[(\d+)\]/g,".$1").split(".");
+function get(o,p){return norm(p).reduce((a,k)=>a==null?a:a[k],o);}
+function set(o,p,v){const ks=norm(p);let a=o;for(let i=0;i<ks.length-1;i++){a=a[ks[i]]??(a[ks[i]]=/^\d+$/.test(ks[i+1])?[]:{});}a[ks[ks.length-1]]=v;}
+
+let toastT;function toast(m,err){const t=$("#toast");t.textContent=m;t.className="toast show"+(err?" err":"");clearTimeout(toastT);toastT=setTimeout(()=>t.className="toast",err?6000:3000);}
+function human(b){return b>1e6?(b/1e6).toFixed(1)+"MB":(b/1e3).toFixed(0)+"KB";}
+
+/* ---------- file selection ---------- */
+const drop=$("#drop"),file=$("#file");
+drop.onclick=()=>file.click();
+drop.ondragover=e=>{e.preventDefault();drop.classList.add("over");};
+drop.ondragleave=()=>drop.classList.remove("over");
+drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");addFiles(e.dataTransfer.files);};
+file.onchange=()=>addFiles(file.files);
+function addFiles(list){for(const f of list)selected.push(f);renderFiles();}
+function renderFiles(){
+  $("#files").innerHTML=selected.map((f,i)=>`<div class="fchip">📄 <span>${f.name}</span><span class="sz">${human(f.size)}</span><span class="x" data-i="${i}">×</span></div>`).join("");
+  document.querySelectorAll(".fchip .x").forEach(x=>x.onclick=()=>{selected.splice(+x.dataset.i,1);renderFiles();});
+  $("#process").disabled=selected.length===0;
+}
+
+/* ---------- extraction ---------- */
+$("#process").onclick=async()=>{
+  if(!selected.length)return;
+  const s=$("#stat");s.className="stat show";s.innerHTML='<span class="spin"></span> Claude קורא את הדוחות…';
+  const fd=new FormData();selected.forEach(f=>fd.append("files",f));
+  try{
+    const r=await fetch("/api/extract",{method:"POST",body:fd});
+    if(r.status===401){location.href="/login";return;}
+    if(!r.ok){const t=await r.text();s.className="stat show";s.textContent="שגיאה: "+t.slice(0,300);return;}
+    const data=await r.json();
+    pitch=data.pitch||{};
+    const ex=data.extraction||{};
+    s.className="stat show";s.innerHTML="✓ חולץ בהצלחה";
+    const yrs=(ex.years||[]).filter(Boolean).join(" · ");
+    $("#exsum").textContent=`חולץ מ-${selected.length} קבצים${yrs?(" · שנים: "+yrs):""}${ex.currencyNote?(" · "+ex.currencyNote):""}. בדוק וערוך לפי הצורך.`;
+    showReview();
+  }catch(e){s.className="stat show";s.textContent="שגיאת רשת: "+e.message;}
+};
+$("#manual").onclick=()=>{pitch={};showReview();};
+
+/* ---------- review form ---------- */
+const SECTIONS=[
+ {h:"חברה",f:[["company.name","שם החברה","text",1],["company.sector","סקטור","text",1],
+   ["company.tagline","סלוגן / מיצוב","textarea",1],["company.revenueModel","מודל הכנסות","text"],
+   ["company.contractLength","אורך התקשרות","text"],["company.grossMarginHl","מרווח גולמי % (תצוגה)","num"]]},
+ {h:"פיננסים ($M, אקטואל)",f:[["financials.revenue[0]","הכנסות שנה 1","num"],["financials.revenue[1]","הכנסות שנה 2","num"],
+   ["financials.revenue[2]","הכנסות שנה 3 (אחרונה)","num"],["financials.projGrowth[0]","צמיחה תחזית שנה +1 (%)","num"],
+   ["financials.projGrowth[1]","צמיחה תחזית שנה +2 (%)","num"],["financials.taxRate","שיעור מס (%)","num"]]},
+ {h:"הנחות מרווח (% — מופרד בפסיק, עד 5 ערכים)",f:[["financials.grossMarginPct","מרווח גולמי %","csv"],
+   ["financials.smPct","מכירות ושיווק %","csv"],["financials.rdPct","מו״פ %","csv"],
+   ["financials.gaPct","הנהלה וכלליות %","csv"],["financials.daPct","פחת %","csv"]]},
+ {h:"סגמנטים",seg:1},
+ {h:"יוניט-אקונומיקס",f:[["unitEcon.nrr","NRR (%)","num"],["unitEcon.customers","מספר לקוחות","num"],
+   ["unitEcon.recurringPct","% הכנסה חוזרת","num"],["unitEcon.logoRetention","שימור לקוחות (%)","num"],
+   ["unitEcon.nps","NPS","num"],["unitEcon.acv","ACV ($)","num"],["unitEcon.grossMarginPct","מרווח גולמי (%)","num"],
+   ["unitEcon.crossSell","Cross-sell (%)","num"]]},
+ {h:"שוק",f:[["market.tam","TAM ($B)","num"],["market.tamCagr","TAM CAGR (%)","num"],["market.sam","SAM ($B)","num"],
+   ["market.samCagr","SAM CAGR (%)","num"],["market.som","SOM ($B)","num"],["market.somCagr","SOM CAGR (%)","num"]]},
+ {h:"הערכת שווי",f:[["valuation.wacc","WACC (%)","num"],["valuation.terminalGrowth","צמיחה פרמננטית (%)","num"],
+   ["valuation.netDebt","חוב נטו ($M)","num"],["valuation.shares","מניות (מ׳)","num"]]},
+ {h:"העסקה",f:[["deal.ev","מחיר / EV ($M)","num"],["deal.evEbitda","EV/EBITDA (x)","num"],["deal.evRev","EV/Revenue (x)","num"],
+   ["deal.structure","מבנה","text"],["deal.stake","נתח נמכר","text"],["deal.timelineWeeks","משך (שבועות)","num"]]},
+ {h:"קשר",f:[["contact.advisor","יועץ","text",1],["contact.firm","פירמה","text"],["contact.email","אימייל","text"],
+   ["contact.phone","טלפון","text"],["contact.project","שם קוד","text"],["contact.date","תאריך","text"]]},
+];
+function fieldHTML(k,label,type){
+  const v=get(pitch,k);const val=Array.isArray(v)?v.join(", "):(v??"");
+  if(type==="textarea")return `<div class="f full"><label>${label}</label><textarea data-k="${k}">${val}</textarea></div>`;
+  const csv=type==="csv"?'data-csv="1"':'';const mono=type==="num"||type==="csv"?'class="mono"':'';
+  return `<div class="f ${type==='csv'?'full':''}"><label>${label}</label><input ${mono} ${csv} data-k="${k}" value="${val}"></div>`;
+}
+function segHTML(){
+  const segs=get(pitch,"financials.segments")||[];
+  const rows=segs.map((s,i)=>`<div class="seg">
+    <div class="f"><label>${i===0?'סגמנט':''}</label><input data-k="financials.segments[${i}].name" value="${s.name??''}"></div>
+    <div class="f"><label>${i===0?'שנה 1':''}</label><input class="mono" data-k="financials.segments[${i}].vals[0]" value="${(s.vals||[])[0]??''}"></div>
+    <div class="f"><label>${i===0?'שנה 2':''}</label><input class="mono" data-k="financials.segments[${i}].vals[1]" value="${(s.vals||[])[1]??''}"></div>
+    <div class="f"><label>${i===0?'שנה 3':''}</label><input class="mono" data-k="financials.segments[${i}].vals[2]" value="${(s.vals||[])[2]??''}"></div>
+    <div class="rm" data-rmseg="${i}">×</div></div>`).join("");
+  return `<div id="segwrap">${rows}</div><button class="add" id="addseg">+ הוסף סגמנט</button>`;
+}
+function showReview(){
+  let html="";
+  SECTIONS.forEach(sec=>{
+    html+=`<div class="grp"><h3>${sec.h}</h3>`;
+    if(sec.seg){html+=segHTML();}
+    else{html+=`<div class="fields">`+sec.f.map(([k,l,t])=>fieldHTML(k,l,t)).join("")+`</div>`;}
+    html+=`</div>`;
+  });
+  $("#form").innerHTML=html;
+  $("#review").style.display="block";$("#downloads").style.display="block";
+  bind();
+  $("#review").scrollIntoView({behavior:"smooth"});
+}
+function bind(){
+  document.querySelectorAll("#form input,#form textarea").forEach(el=>{
+    el.oninput=()=>{let v=el.value;if(el.dataset.csv){v=v.split(",").map(x=>x.trim()).filter(x=>x!=="");}set(pitch,el.dataset.k,v);};
+  });
+  const addseg=$("#addseg");if(addseg)addseg.onclick=()=>{const s=get(pitch,"financials.segments")||[];s.push({name:"",vals:["","",""]});set(pitch,"financials.segments",s);showReview();};
+  document.querySelectorAll("[data-rmseg]").forEach(b=>b.onclick=()=>{const s=get(pitch,"financials.segments")||[];s.splice(+b.dataset.rmseg,1);set(pitch,"financials.segments",s);showReview();});
+}
+
+/* ---------- downloads ---------- */
+document.querySelectorAll("[data-dl]").forEach(b=>b.onclick=()=>download(b.dataset.dl,b));
+async function download(endpoint,btn){
+  const s=$("#dlstat");s.className="stat show";s.innerHTML='<span class="spin"></span> בונה…';btn.disabled=true;
+  try{
+    const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(pitch)});
+    if(r.status===401){location.href="/login";return;}
+    if(!r.ok){const t=await r.text();s.className="stat show";s.textContent="שגיאה: "+t.slice(0,400);return;}
+    const blob=await r.blob();const cd=r.headers.get("Content-Disposition")||"";
+    const mm=cd.match(/filename="?([^"]+)"?/);const fn=mm?mm[1]:"download";
+    const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=fn;a.click();URL.revokeObjectURL(u);
+    s.className="stat show";s.innerHTML="✓ "+fn+" הורד";
+  }catch(e){s.className="stat show";s.textContent="שגיאת רשת: "+e.message;}
+  finally{btn.disabled=false;}
+}
+
+/* health -> show key warning if missing */
+fetch("/api/health").then(r=>r.json()).then(d=>{if(!d.has_key)$("#keynote").style.display="block";if(d.auth){const b=document.querySelector(".brand");const a=document.createElement("a");a.href="/logout";a.textContent="יציאה";a.style.cssText="margin-inline-start:auto;color:#8A95AC;font-size:13px;text-decoration:underline;font-weight:500";b.style.display="flex";b.appendChild(a);}}).catch(()=>{});
+</script>
+</body>
+</html>
