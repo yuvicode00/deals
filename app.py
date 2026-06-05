@@ -26,11 +26,11 @@ from collections import deque
 from fastapi import FastAPI, UploadFile, File, Body, Form, Request, HTTPException
 from fastapi.responses import JSONResponse, Response, RedirectResponse, HTMLResponse
 
+HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)  # ensure sibling modules import regardless of how uvicorn is launched
 import schema
 import populate_deck
 
-HERE = os.path.dirname(os.path.abspath(__file__))
 WEB = HERE  # flat layout: index.html sits next to app.py
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
