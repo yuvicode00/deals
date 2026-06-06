@@ -68,36 +68,164 @@ def _disp(x):
         return ""
 
 
+def _disp_ratio(x):
+    """For metrics that routinely exceed 100% (e.g. NRR ~ 0.8-1.5): treat a value
+    of 3 or less as a ratio and scale to a percent; leave already-percent values."""
+    try:
+        f = float(x)
+        return round(f * 100, 1) if 0 < f <= 3 else f
+    except (TypeError, ValueError):
+        return ""
+
+
+def _keep(v):
+    return v not in (None, "")
+
+
 def map_extraction(ext):
-    """AI extraction JSON -> partial pitch-data (financials + company name)."""
+    """AI extraction JSON -> partial pitch-data. Maps financials AND the full
+    narrative set (company, market, competition, products, team, customers, comps)
+    that the model drafts from the documents + web research."""
     if not isinstance(ext, dict):
         return {}
-    fin, comp = {}, {}
-    if ext.get("companyName"):
-        comp["name"] = str(ext["companyName"])
+    out = {}
+
+    # ---- company (narrative scalars) ----
+    comp = {}
+    for src, dst in [("companyName", "name"), ("sector", "sector"), ("tagline", "tagline"),
+                     ("geography", "geography"), ("founded", "founded"), ("website", "website"),
+                     ("revenueModel", "revenueModel"), ("contractLength", "contractLength"),
+                     ("uvp", "uvp"), ("marketPosition", "marketPosition"),
+                     ("defensibility", "defensibility")]:
+        if _keep(ext.get(src)):
+            comp[dst] = str(ext[src])
+
+    # ---- financials ----
+    fin = {}
     rev = ext.get("revenue")
-    if isinstance(rev, list) and any(v not in (None, "") for v in rev):
-        fin["revenue"] = [("" if v in (None, "") else v) for v in rev[:3]] + [""] * (3 - len(rev[:3]))
+    if isinstance(rev, list) and any(_keep(v) for v in rev):
+        fin["revenue"] = [("" if not _keep(v) else v) for v in rev[:3]] + [""] * (3 - len(rev[:3]))
     for key in ("grossMarginPct", "smPct", "rdPct", "gaPct", "daPct"):
         arr = ext.get(key)
-        if isinstance(arr, list) and any(v not in (None, "") for v in arr):
+        if isinstance(arr, list) and any(_keep(v) for v in arr):
             fin[key] = [_disp(v) for v in arr[:3]]
-    if ext.get("taxRate") not in (None, ""):
+    if _keep(ext.get("taxRate")):
         fin["taxRate"] = _disp(ext["taxRate"])
     pg = ext.get("projGrowth")
-    if isinstance(pg, list) and any(v not in (None, "") for v in pg):
+    if isinstance(pg, list) and any(_keep(v) for v in pg):
         fin["projGrowth"] = [_disp(v) for v in pg[:2]]
     segs = ext.get("segments")
     if isinstance(segs, list) and any(isinstance(s, dict) and s.get("name") for s in segs):
         fin["segments"] = [{"name": str(s.get("name") or "Segment"),
-                            "vals": [(("" if v in (None, "") else v))
-                                     for v in (s.get("vals") or [])[:3]]}
+                            "vals": [("" if not _keep(v) else v) for v in (s.get("vals") or [])[:3]]}
                            for s in segs[:6] if isinstance(s, dict)]
-    out = {}
-    if comp:
-        out["company"] = comp
-    if fin:
-        out["financials"] = fin
+
+    # ---- unit economics (percent fields as decimals -> display) ----
+    ue_src = ext.get("unitEcon") or {}
+    ue = {}
+    if _keep(ue_src.get("nrr")):
+        ue["nrr"] = _disp_ratio(ue_src["nrr"])
+    for k in ("recurringPct", "grossMarginPct", "logoRetention", "crossSell"):
+        if _keep(ue_src.get(k)):
+            ue[k] = _disp(ue_src[k])
+    for k in ("nps", "acv", "customers"):
+        if _keep(ue_src.get(k)):
+            ue[k] = ue_src[k]
+
+    # ---- products ----
+    products = None
+    prods = ext.get("products")
+    if isinstance(prods, list) and any(isinstance(p, dict) and p.get("name") for p in prods):
+        products = [{"name": str(p.get("name") or ""), "tag": str(p.get("tag") or "CORE"),
+                     "pct": (_disp(p["pct"]) if _keep(p.get("pct")) else ""),
+                     "desc": str(p.get("desc") or "")}
+                    for p in prods[:6] if isinstance(p, dict)]
+
+    # ---- customers ----
+    cu_src = ext.get("customers") or {}
+    cust = {}
+    if isinstance(cu_src.get("logos"), list):
+        logos = [str(x) for x in cu_src["logos"] if _keep(x)]
+        if logos:
+            cust["logos"] = logos
+    for k in ("quote", "quoteName", "quoteTitle", "quoteCompany"):
+        if _keep(cu_src.get(k)):
+            cust[k] = str(cu_src[k])
+
+    # ---- market ($B sizes plain; CAGR as decimals) ----
+    mk_src = ext.get("market") or {}
+    mkt = {}
+    for k in ("tam", "sam", "som"):
+        if _keep(mk_src.get(k)):
+            mkt[k] = mk_src[k]
+    for k in ("tamCagr", "samCagr", "somCagr"):
+        if _keep(mk_src.get(k)):
+            mkt[k] = _disp(mk_src[k])
+    if isinstance(mk_src.get("trends"), list):
+        tr = [str(x) for x in mk_src["trends"] if _keep(x)]
+        if tr:
+            mkt["trends"] = tr
+
+    # ---- competition ----
+    cp_src = ext.get("competition") or {}
+    comp_sec = {}
+    if _keep(cp_src.get("axisX")):
+        comp_sec["axisX"] = str(cp_src["axisX"])
+    if _keep(cp_src.get("axisY")):
+        comp_sec["axisY"] = str(cp_src["axisY"])
+    pls = cp_src.get("players")
+    if isinstance(pls, list) and any(isinstance(p, dict) and p.get("name") for p in pls):
+        comp_sec["players"] = [dict({"name": str(p.get("name") or "")},
+                                    **({"strength": p["strength"]} if _keep(p.get("strength")) else {}))
+                               for p in pls[:6] if isinstance(p, dict)]
+
+    # ---- roadmap ----
+    roadmap = None
+    rd = ext.get("roadmap")
+    if isinstance(rd, list) and any(isinstance(r, dict) and r.get("title") for r in rd):
+        roadmap = [{"year": str(r.get("year") or ""), "title": str(r.get("title") or ""),
+                    "desc": str(r.get("desc") or "")} for r in rd[:8] if isinstance(r, dict)]
+
+    # ---- team ----
+    tm_src = ext.get("team") or {}
+    team = {}
+    if _keep(tm_src.get("headcount")):
+        team["headcount"] = tm_src["headcount"]
+    if _keep(tm_src.get("tenure")):
+        team["tenure"] = tm_src["tenure"]
+    if _keep(tm_src.get("attrition")):
+        team["attrition"] = _disp(tm_src["attrition"])
+    mem = tm_src.get("members")
+    if isinstance(mem, list) and any(isinstance(m, dict) and m.get("name") for m in mem):
+        team["members"] = [{"name": str(m.get("name") or ""), "role": str(m.get("role") or ""),
+                            "bio": str(m.get("bio") or "")} for m in mem[:8] if isinstance(m, dict)]
+
+    # ---- comps ($M) ----
+    comps = None
+    cmp_src = ext.get("comps")
+    if isinstance(cmp_src, list) and any(isinstance(c, dict) and c.get("name") for c in cmp_src):
+        comps = [{"name": str(c.get("name") or ""), "rev": c.get("rev", ""),
+                  "ebitda": c.get("ebitda", ""), "ev": c.get("ev", "")}
+                 for c in cmp_src[:8] if isinstance(c, dict)]
+
+    # ---- deal multiples (AI estimate; EV/price stays advisor-provided) ----
+    dl_src = ext.get("deal") or {}
+    deal = {}
+    for k in ("evEbitda", "evRev"):
+        if _keep(dl_src.get(k)):
+            deal[k] = dl_src[k]
+
+    if comp:     out["company"] = comp
+    if fin:      out["financials"] = fin
+    if ue:       out["unitEcon"] = ue
+    if products: out["products"] = products
+    if cust:     out["customers"] = cust
+    if mkt:      out["market"] = mkt
+    if comp_sec: out["competition"] = comp_sec
+    if roadmap:  out["roadmap"] = roadmap
+    if team:     out["team"] = team
+    if comps:    out["comps"] = comps
+    if deal:     out["deal"] = deal
     return out
 
 

@@ -47,17 +47,34 @@ OPEN_PATHS = {"/login", "/logout", "/api/health", "/favicon.ico"}
 app = FastAPI(title="Deal Studio")
 
 EXTRACT_PROMPT = (
-    "You are a financial analyst. The attached file(s) are financial statements / P&L "
-    "reports, possibly spanning multiple fiscal years and multiple files. Consolidate "
-    "everything into ONE timeline. Return ONLY a JSON object (no prose, no markdown "
-    "fences) with EXACTLY this shape. Use $ MILLIONS as decimal numbers (e.g. 12.4). "
-    "Express every percentage as a decimal between 0 and 1 (0.72 = 72%). Provide the "
-    "THREE most recent fiscal years in chronological order [oldest, middle, latest]. "
-    "Use null for anything you cannot find. Do not invent numbers.\n"
-    '{"companyName": string|null, "currencyNote": string, "years": [string,string,string], '
-    '"revenue": [n,n,n], "grossMarginPct": [n,n,n], "smPct": [n,n,n], "rdPct": [n,n,n], '
-    '"gaPct": [n,n,n], "daPct": [n,n,n], "taxRate": n, "projGrowth": [n,n], '
-    '"segments": [{"name": string, "vals": [n,n,n]}]}'
+    "You are an M&A analyst preparing an acquisition pitch. You receive financial "
+    "statements / P&L reports (possibly several files and years) and optionally a company "
+    "website to research. Produce ONE consolidated profile.\n"
+    "Return ONLY a JSON object — no prose, no markdown fences — with the shape below.\n"
+    "RULES: money in $ MILLIONS as decimals (e.g. 12.4); market sizes tam/sam/som in $ "
+    "BILLIONS as plain numbers; every percentage and growth/CAGR as a DECIMAL 0-1 (0.72 = "
+    "72%); competitor strength 1-10; nps a plain number; customers an integer.\n"
+    "Give the THREE most recent fiscal years in order [oldest, middle, latest].\n"
+    "Do NOT invent financial figures — use null for any revenue/margin/expense not found "
+    "in the documents. For NARRATIVE fields (tagline, uvp, marketPosition, defensibility, "
+    "products, market sizing, trends, competitors, team, roadmap, customer logos) provide "
+    "your BEST PROFESSIONAL DRAFT based on the documents, the website if provided, and your "
+    "knowledge of the sector — the advisor will review and edit these. Fill as many fields "
+    "as you reasonably can; use null only when truly unknowable.\n"
+    '{"companyName":s,"sector":s,"tagline":s,"geography":s,"founded":s,"website":s,'
+    '"revenueModel":s,"contractLength":s,"uvp":s,"marketPosition":s,"defensibility":s,'
+    '"currencyNote":s,"years":[s,s,s],"revenue":[n,n,n],"grossMarginPct":[n,n,n],'
+    '"smPct":[n,n,n],"rdPct":[n,n,n],"gaPct":[n,n,n],"daPct":[n,n,n],"taxRate":n,'
+    '"projGrowth":[n,n],"segments":[{"name":s,"vals":[n,n,n]}],'
+    '"unitEcon":{"nrr":n,"recurringPct":n,"grossMarginPct":n,"logoRetention":n,'
+    '"crossSell":n,"nps":n,"acv":n,"customers":n},'
+    '"products":[{"name":s,"tag":s,"pct":n,"desc":s}],'
+    '"customers":{"logos":[s],"quote":s,"quoteName":s,"quoteTitle":s,"quoteCompany":s},'
+    '"market":{"tam":n,"tamCagr":n,"sam":n,"samCagr":n,"som":n,"somCagr":n,"trends":[s]},'
+    '"competition":{"axisX":s,"axisY":s,"players":[{"name":s,"strength":n}]},'
+    '"roadmap":[{"year":s,"title":s,"desc":s}],'
+    '"team":{"headcount":n,"tenure":n,"attrition":n,"members":[{"name":s,"role":s,"bio":s}]},'
+    '"comps":[{"name":s,"rev":n,"ebitda":n,"ev":n}],"deal":{"evEbitda":n,"evRev":n}}'
 )
 
 
@@ -154,7 +171,8 @@ def health():
 
 
 @app.post("/api/extract")
-async def extract(request: Request, files: list[UploadFile] = File(...)):
+async def extract(request: Request, files: list[UploadFile] = File(default=[]),
+                  url: str = Form(default="")):
     if not os.environ.get("ANTHROPIC_API_KEY"):
         raise HTTPException(400, "ANTHROPIC_API_KEY is not set on the server.")
     if not _rate_ok(request.client.host if request.client else "?"):
@@ -164,19 +182,31 @@ async def extract(request: Request, files: list[UploadFile] = File(...)):
     except ImportError:
         raise HTTPException(500, "The 'anthropic' package is not installed. Run: pip install -r requirements.txt")
 
+    url = (url or "").strip()
     content = []
-    for up in files:
+    for up in files or []:
         raw = await up.read()
         if raw:
             content.append(_block_for(up, raw))
+    if not content and not url:
+        raise HTTPException(400, "Upload at least one report, or provide a company website URL.")
+
+    prompt = EXTRACT_PROMPT
+    if url:
+        prompt += ("\n\nThe company's website is: " + url + "\nUse web search to study this "
+                   "website and the company online, and use what you find to fill the narrative, "
+                   "market, competitor, product and team fields. Cross-check against the documents.")
     if not content:
-        raise HTTPException(400, "No readable files were uploaded.")
-    content.append({"type": "text", "text": EXTRACT_PROMPT})
+        prompt = ("Research the company at " + url + " using web search, then " + prompt)
+    content.append({"type": "text", "text": prompt})
+
+    tools = [{"type": "web_search_20250305", "name": "web_search", "max_uses": 6}] if url else []
 
     client = Anthropic()
     try:
-        msg = client.messages.create(model=MODEL, max_tokens=2000,
-                                     messages=[{"role": "user", "content": content}])
+        msg = client.messages.create(model=MODEL, max_tokens=4096,
+                                     messages=[{"role": "user", "content": content}],
+                                     tools=tools)
     except Exception as e:
         raise HTTPException(502, f"Anthropic API error: {e}")
 
@@ -185,7 +215,13 @@ async def extract(request: Request, files: list[UploadFile] = File(...)):
     try:
         extraction = json.loads(text)
     except json.JSONDecodeError:
-        raise HTTPException(422, f"Could not parse model output as JSON:\n{text[:1500]}")
+        mm = re.search(r"\{.*\}", text, re.S)  # tolerate stray text around the JSON
+        if not mm:
+            raise HTTPException(422, f"Could not parse model output as JSON:\n{text[:1500]}")
+        try:
+            extraction = json.loads(mm.group(0))
+        except json.JSONDecodeError:
+            raise HTTPException(422, f"Could not parse model output as JSON:\n{text[:1500]}")
 
     pitch = schema.build_pitch(extraction=extraction)
     return JSONResponse({"extraction": extraction, "pitch": pitch})

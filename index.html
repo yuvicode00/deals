@@ -125,6 +125,10 @@ header{position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);background:li
 .row{display:flex;gap:13px;flex-wrap:wrap;margin-top:20px}
 .warn{margin-top:16px;font-size:12.5px;color:var(--faint);background:rgba(255,255,255,.03);border:1px solid var(--hair);border-radius:11px;padding:12px 15px;display:none}
 .warn.show{display:block}
+.urlrow{margin-top:16px;display:flex;flex-direction:column;gap:7px}
+.urlrow label{font-size:13px;font-weight:600;color:var(--soft)}
+.urlrow label span{color:var(--mut);font-weight:400;font-size:12px}
+.urlrow input{font-family:var(--mono);font-size:13.5px}
 /* reading overlay */
 .reading{position:fixed;inset:0;z-index:200;display:none;place-items:center;background:rgba(5,8,15,.72);backdrop-filter:blur(8px)}
 .reading.show{display:grid;animation:viewin .3s}
@@ -237,7 +241,7 @@ footer{border-top:1px solid rgba(255,255,255,.06);padding:30px 0;text-align:cent
   <div class="wrap hero">
     <div class="eyebrow anim-up d1"><span class="pulse"></span>מ-דוחות כספיים לעסקה מוכנה — באוטומט</div>
     <h1 class="anim-up d2">הופכים דוחות כספיים ל<em class="gold-text">מצגת רכישה ומודל אקסל</em> מוכנים</h1>
-    <p class="sub anim-up d3">מעלים את הדוחות של החברה, Claude קורא ומחלץ את כל המספרים, ואתם מקבלים מצגת משקיעים מלאה ומודל IB ב-Excel — לצפייה בדפדפן או להורדה. כל ניתוח נשמר בדשבורד אישי.</p>
+    <p class="sub anim-up d3">מעלים את הדוחות של החברה — ואפשר גם להדביק כתובת אתר. Claude קורא את הדוחות, חוקר את החברה ברשת, וממלא כמעט הכל לבד: מספרים, שוק, מתחרים וצוות. אתם רק מאשרים — ומקבלים מצגת משקיעים ומודל IB ב-Excel, לצפייה או להורדה.</p>
     <div class="cta anim-up d4">
       <button class="btn primary" onclick="nav('studio')">התחל ניתוח חדש ←</button>
       <button class="btn ghost" onclick="nav('dashboard')">לדשבורד שלי</button>
@@ -264,13 +268,13 @@ footer{border-top:1px solid rgba(255,255,255,.06);padding:30px 0;text-align:cent
     <div class="steps">
       <div class="step glass anim-up d1"><div class="no">01</div><h3>מעלים דוחות</h3><p>גוררים דוחות כספיים מכמה שנים — PDF או תמונות. ככל שיש יותר שנים, התוצר מדויק יותר.</p>
         <svg class="ic" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg></div>
-      <div class="step glass anim-up d2"><div class="no">02</div><h3>Claude קורא ומחלץ</h3><p>בינה מלאכותית קוראת את הדוחות, מאחדת את כל השנים ומחלצת הכנסות, מרווחים, הוצאות וסגמנטים.</p>
+      <div class="step glass anim-up d2"><div class="no">02</div><h3>Claude קורא וגם חוקר</h3><p>קורא את הדוחות ומחלץ מספרים — ואם הוספת כתובת אתר, גם חוקר את החברה ברשת וממלא שוק, מתחרים, מוצרים וצוות.</p>
         <svg class="ic" viewBox="0 0 24 24"><path d="M3 17l5-5 4 4 8-8"/><path d="M16 8h5v5"/></svg></div>
       <div class="step glass anim-up d3"><div class="no">03</div><h3>מקבלים מצגת + אקסל</h3><p>מצגת רכישה של 12 שקפים ומודל IB מלא ב-Excel — לצפייה בדפדפן או להורדה, ונשמר בדשבורד.</p>
         <svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M9 21h6M12 17v4"/></svg></div>
     </div>
     <div class="feat">
-      <div class="fc glass anim-up d1"><svg viewBox="0 0 24 24"><path d="M12 2l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/></svg><h4>מודל IB מלא</h4><p>7 גיליונות, נוסחאות חיות, DCF, comps וגאנט</p></div>
+      <div class="fc glass anim-up d1"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 010 18M12 3a14 14 0 000 18"/></svg><h4>מחקר אתר אוטומטי</h4><p>הדבק כתובת אתר — Claude חוקר את הרשת וממלא את השאר</p></div>
       <div class="fc glass anim-up d2"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><h4>בדקות</h4><p>מה שלקח שעות — קורה תוך כמה דקות</p></div>
       <div class="fc glass anim-up d3"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/></svg><h4>מאובטח ופרטי</h4><p>כניסה עם סיסמה; הדוחות לא נשמרים בשרת</p></div>
       <div class="fc glass anim-up d4"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><h4>דשבורד אישי</h4><p>כל החברות שניתחת במקום אחד</p></div>
@@ -291,6 +295,10 @@ footer{border-top:1px solid rgba(255,255,255,.06);padding:30px 0;text-align:cent
       <input type="file" id="file" accept="application/pdf,image/png,image/jpeg,image/webp" multiple hidden>
     </div>
     <div class="files" id="files"></div>
+    <div class="urlrow">
+      <label for="url">🌐 כתובת אתר החברה <span>(לא חובה — Claude יחקור אותו וישלים את החסר)</span></label>
+      <input type="url" id="url" placeholder="https://company.com" dir="ltr">
+    </div>
     <div class="row">
       <button class="btn primary" id="process" disabled>עבד דוחות עם AI ←</button>
       <button class="btn ghost" id="manual">דלג והזן ידנית</button>
@@ -387,42 +395,42 @@ function add(list){for(const f of list)selected.push(f);renderFiles();}
 function renderFiles(){
   $("#files").innerHTML=selected.map((f,i)=>`<div class="fchip"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg><span>${f.name}</span><span class="sz">${human(f.size)}</span><span class="x" data-i="${i}">×</span></div>`).join("");
   $$(".fchip .x").forEach(x=>x.onclick=()=>{selected.splice(+x.dataset.i,1);renderFiles();});
-  $("#process").disabled=selected.length===0;
+  syncProcess();
 }
+function urlVal(){return ($("#url").value||"").trim();}
+function syncProcess(){$("#process").disabled=(selected.length===0 && !urlVal());}
+$("#url").oninput=syncProcess;
 
 /* ---------- reading animation ---------- */
-const RMSG=["מעלה את הקבצים…","קורא את העמודים…","מזהה דוח רווח והפסד…","מחלץ הכנסות לפי שנים…","מזהה מרווחים והוצאות…","מאחד את כל השנים…","מסכם ובודק…"];
-let rTimer;
-function startReading(){let i=0;$("#rstatus").textContent=RMSG[0];$("#reading").classList.add("show");
-  rTimer=setInterval(()=>{i=(i+1)%RMSG.length;$("#rstatus").textContent=RMSG[i];},1400);}
+const RMSG_DOC=["מעלה את הקבצים…","קורא את העמודים…","מזהה דוח רווח והפסד…","מחלץ הכנסות לפי שנים…","מזהה מרווחים והוצאות…","מאחד את כל השנים…","מסכם ובודק…"];
+const RMSG_WEB=["מעלה את הקבצים…","קורא את הדוחות…","חוקר את אתר החברה…","סורק את הרשת למידע על השוק…","מאתר מתחרים ומגמות…","מעריך גודל שוק (TAM/SAM/SOM)…","מנסח מיצוב וצוות…","מאחד הכל ובודק…"];
+let RMSG=RMSG_DOC, rTimer;
+function startReading(){RMSG=urlVal()?RMSG_WEB:RMSG_DOC;let i=0;$("#rstatus").textContent=RMSG[0];$("#reading").classList.add("show");
+  rTimer=setInterval(()=>{i=(i+1)%RMSG.length;$("#rstatus").textContent=RMSG[i];},1500);}
 function stopReading(){clearInterval(rTimer);$("#reading").classList.remove("show");}
 
 /* ---------- extraction ---------- */
 $("#process").onclick=async()=>{
-  if(!selected.length)return; startReading();
+  if(!selected.length && !urlVal())return; startReading();
   const fd=new FormData();selected.forEach(f=>fd.append("files",f));
+  if(urlVal())fd.append("url",urlVal());
   try{
     const r=await fetch("/api/extract",{method:"POST",body:fd});
     if(r.status===401){location.href="/login";return;}
     if(!r.ok){stopReading();const t=await r.text();toast("שגיאה בחילוץ: "+t.slice(0,200),true);return;}
     const data=await r.json(); pitch=data.pitch||{};
     const ex=data.extraction||{}; const yrs=(ex.years||[]).filter(Boolean).join(" · ");
-    stopReading(); openReview(`חולץ מ-${selected.length} קבצים${yrs?(" · שנים: "+yrs):""}. השלם את הפרטים החסרים שאינם מופיעים בדוח (שוק, צוות, תנאי עסקה).`);
+    const src=urlVal()?"מהדוחות ומהאתר":"מהדוחות";
+    stopReading(); openReview(`Claude מילא את רוב השדות ${src}${yrs?(" · שנים: "+yrs):""}. עבור, תקן טיוטות לא מדויקות, והשלם רק את שדות החובה (•).`);
   }catch(e){stopReading();toast("שגיאת רשת: "+e.message,true);}
 };
-$("#manual").onclick=()=>{pitch={};openReview("הזן את כל הפרטים. שדות החובה מסומנים ב-•.");};
+$("#manual").onclick=()=>{pitch={};openReview("הזן את הפרטים. שדות החובה מסומנים ב-• — השאר אופציונלי.");};
 
 /* ---------- review form config ---------- */
-const REQUIRED=["company.name","company.sector","company.tagline","company.revenueModel","company.uvp",
-"financials.revenue[0]","financials.revenue[1]","financials.revenue[2]","financials.taxRate",
-"unitEcon.nrr","unitEcon.customers","unitEcon.recurringPct","unitEcon.grossMarginPct",
-"market.tam","market.tamCagr","market.sam","market.som",
-"products[0].name","products[0].desc",
-"competition.players[0].name","competition.players[1].name",
-"roadmap[0].title","roadmap[1].title","roadmap[2].title",
-"team.members[0].name","team.members[0].role","team.members[1].name","team.members[1].role","team.headcount",
-"deal.ev","deal.evEbitda","deal.evRev","valuation.netDebt",
-"contact.advisor","contact.firm","contact.email"];
+/* Only the few things the advisor truly must confirm. Everything else is
+   AI-prefilled (from the reports + web research) and editable but not blocking. */
+const REQUIRED=["company.name","company.sector","financials.revenue[2]",
+"deal.ev","contact.advisor","contact.firm","contact.email"];
 const isReq=p=>REQUIRED.includes(p);
 
 const SECTIONS=[
