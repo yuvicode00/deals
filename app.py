@@ -248,6 +248,83 @@ def package(data: dict = Body(...)):
                     headers={"Content-Disposition": f'attachment; filename="{name}_DealPack.zip"'})
 
 
+# ============================================================
+# Saved analyses (SQLite) — powers the dashboard
+# ============================================================
+import sqlite3, uuid, datetime
+DB_PATH = os.environ.get("DB_PATH") or os.path.join(HERE, "deals.db")
+
+def _db():
+    con = sqlite3.connect(DB_PATH)
+    con.execute("CREATE TABLE IF NOT EXISTS deals (id TEXT PRIMARY KEY, name TEXT, sector TEXT, created_at TEXT, pitch TEXT)")
+    return con
+
+def _summary(pitch):
+    m = populate_deck.token_map(pitch)
+    co = pitch.get("company", {})
+    return {"name": co.get("name") or m["company_name"], "sector": co.get("sector") or "—",
+            "rev_ltm": m["rev_ltm"], "growth": m["growth_yoy"], "cagr": m["cagr_pct"],
+            "ebitda_margin": m["ebitda_margin_num"], "nrr": m["nrr_num"], "ev": m["deal_price"],
+            "tam": m["tam"]}
+
+@app.post("/api/save")
+def save_deal(data: dict = Body(...)):
+    pitch = _coerce(data)
+    co = pitch.get("company", {})
+    did = uuid.uuid4().hex[:12]
+    con = _db()
+    con.execute("INSERT INTO deals VALUES (?,?,?,?,?)",
+                (did, co.get("name") or "Untitled", co.get("sector") or "",
+                 datetime.datetime.utcnow().isoformat(timespec="seconds"),
+                 json.dumps(pitch, ensure_ascii=False)))
+    con.commit(); con.close()
+    return {"id": did}
+
+@app.get("/api/deals")
+def list_deals():
+    con = _db()
+    rows = con.execute("SELECT id,created_at,pitch FROM deals ORDER BY created_at DESC").fetchall()
+    con.close()
+    out = []
+    for did, created, pj in rows:
+        try:
+            p = json.loads(pj)
+        except Exception:
+            p = {}
+        s = _summary(p); s.update({"id": did, "created_at": created})
+        out.append(s)
+    return out
+
+@app.get("/api/deals/{did}")
+def get_deal(did: str):
+    con = _db()
+    r = con.execute("SELECT pitch FROM deals WHERE id=?", (did,)).fetchone()
+    con.close()
+    if not r:
+        raise HTTPException(404, "Not found")
+    return json.loads(r[0])
+
+@app.delete("/api/deals/{did}")
+def del_deal(did: str):
+    con = _db(); con.execute("DELETE FROM deals WHERE id=?", (did,)); con.commit(); con.close()
+    return {"ok": True}
+
+@app.get("/api/deals/{did}/deck")
+def deal_deck(did: str):
+    html = populate_deck.populate(get_deal(did))
+    return Response(html, media_type="text/html")  # inline — opens in a new tab
+
+@app.get("/api/deals/{did}/excel")
+def deal_excel(did: str):
+    pitch = get_deal(did)
+    with tempfile.TemporaryDirectory() as td:
+        name, xpath = _build_excel(pitch, td)
+        blob = open(xpath, "rb").read()
+    return Response(blob,
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f'attachment; filename="{name}_MA_Analysis.xlsx"'})
+
+
 @app.get("/")
 def home():
     return HTMLResponse(open(os.path.join(WEB, "index.html"), encoding="utf-8").read())
