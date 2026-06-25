@@ -1,0 +1,53 @@
+name: X autopost — generate draft
+
+# Runs on a schedule, drafts a post with Claude, and opens a review issue.
+# Nothing is published here; publishing happens only after you add the
+# "x-approve" label (see x-autopost-publish.yml).
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # 00:00 UTC = 09:00 JST, daily
+  workflow_dispatch: {}   # lets you trigger a draft manually from the Actions tab
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r x-manager/autopost/requirements.txt
+
+      - name: Generate draft
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          ACCOUNT_PROFILE: ${{ secrets.X_ACCOUNT_PROFILE }}
+        run: python x-manager/autopost/generate.py
+
+      - name: Ensure labels exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create x-draft   --color BFD4F2 --description "Auto-generated X post awaiting review" 2>/dev/null || true
+          gh label create x-approve --color 0E8A16 --description "Approve to publish this X post"        2>/dev/null || true
+
+      - name: Open review issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f x-manager/autopost/.out/body.md ]; then
+            gh issue create \
+              --title "$(cat x-manager/autopost/.out/title.txt)" \
+              --body-file x-manager/autopost/.out/body.md \
+              --label x-draft
+          else
+            echo "No draft produced (theme queue empty?) — nothing to review."
+          fi

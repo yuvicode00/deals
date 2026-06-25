@@ -2,3 +2,8 @@
 # X-manager plugin local config (account info — do not commit)
 config.local.md
 x-manager/config.local.md
+
+# X autopost scratch output
+x-manager/autopost/.out/
+__pycache__/
+*.pyc

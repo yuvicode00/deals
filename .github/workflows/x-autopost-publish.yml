@@ -1,0 +1,53 @@
+name: X autopost — publish approved
+
+# Triggers when the "x-approve" label is added to a draft issue.
+# Only repo collaborators can add labels, so this is the approval gate.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  publish:
+    if: github.event.label.name == 'x-approve'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r x-manager/autopost/requirements.txt
+
+      - name: Publish to X
+        id: post
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }}
+        run: python x-manager/autopost/publish.py
+
+      - name: Comment result and close
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "✅ 投稿しました: ${{ steps.post.outputs.tweet_url }}"
+          gh issue close ${{ github.event.issue.number }}
+
+      - name: Report failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "❌ 投稿に失敗しました。Actions のログを確認してください。ラベルを外して再度付け直すと再試行されます。"
