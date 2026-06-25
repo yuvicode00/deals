@@ -1,0 +1,52 @@
+name: X autopost — learn style
+
+# Fetches a target account's recent tweets via the X API, distills a style
+# guide with Claude, and commits the learned style into the repo so the daily
+# generator writes in that voice. Run manually anytime, plus a weekly refresh.
+
+on:
+  workflow_dispatch:
+    inputs:
+      username:
+        description: "X username to learn from (without @)"
+        default: "TheLongInvest"
+        required: true
+  schedule:
+    - cron: "0 1 * * 1"   # weekly, Monday 10:00 JST
+
+permissions:
+  contents: write
+
+jobs:
+  learn:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r x-manager/autopost/requirements.txt
+
+      - name: Learn style
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+          TARGET_USERNAME: ${{ github.event.inputs.username || 'TheLongInvest' }}
+        run: python x-manager/autopost/fetch_style.py
+
+      - name: Commit learned style
+        env:
+          TARGET_USERNAME: ${{ github.event.inputs.username || 'TheLongInvest' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add x-manager/reference/x-style-profile.md x-manager/reference/x-style-examples.md
+          if git diff --cached --quiet; then
+            echo "No style changes."
+          else
+            git commit -m "Update learned X style from @${TARGET_USERNAME}"
+            git push
+          fi

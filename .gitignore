@@ -7,3 +7,6 @@ x-manager/config.local.md
 x-manager/autopost/.out/
 __pycache__/
 *.pyc
+
+# Cached raw tweets from style learning (someone else's content — not committed)
+x-manager/autopost/style/

@@ -2,8 +2,12 @@
 # Lines starting with "#" and blank lines are ignored.
 # A theme is selected by rotating daily (date-based), so the queue is
 # stateless: edit freely, add or remove lines at any time.
-生成AIを導入したのに成果が出ない日本企業の課題と打ち手
-AIエージェントが変えるホワイトカラーの働き方
-中小企業が今すぐ始められる生成AI活用の第一歩
-AIエージェント時代に求められるビジネスパーソンのスキル
-生成AIのROIを最大化する社内体制の作り方
+# These are investing/finance themes to match the learned @TheLongInvest voice.
+What the P/E ratio really tells you about a stock
+Why dollar-cost averaging beats trying to time the market
+The difference between price and value in investing
+How compounding quietly builds wealth over decades
+Reading a company's free cash flow, and why it matters
+Value traps: when a cheap stock is cheap for a reason
+What a dividend yield does and doesn't tell you
+Why patience is an investor's biggest edge

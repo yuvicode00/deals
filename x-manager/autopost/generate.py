@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Generate an X post draft from the next queued theme using the Claude API.
 
-Reads the x-writing guidelines and examples committed in this repo, picks a
-theme from themes.txt (rotating by date, so it needs no write-back), asks
-Claude to draft a post, and writes the issue title/body that the approval
+Reads a style guide and example posts from the repo, picks a theme from
+themes.txt (rotating by date, so it needs no write-back), asks Claude to draft
+a post in that voice, and writes the issue title/body that the approval
 workflow turns into a review issue.
+
+Style source preference (first that exists wins):
+  - x-manager/reference/x-style-profile.md   (learned via fetch_style.py)
+  - x-manager/reference/x-writing-guidelines.md  (the plugin's default)
+and likewise x-style-examples.md -> x-writing-examples.md.
 
 The generated post text is wrapped between HTML-comment markers so the
 publish step can extract it reliably from the issue body.
@@ -22,6 +27,13 @@ OUT = Path(os.environ.get("OUT_DIR", HERE / ".out"))
 MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 MARK_START = "<!--POST_START-->"
 MARK_END = "<!--POST_END-->"
+
+
+def read_first(paths):
+    for path in paths:
+        if path.exists():
+            return path.read_text(encoding="utf-8")
+    return ""
 
 
 def pick_theme():
@@ -44,30 +56,35 @@ def main():
         print("themes.txt is empty — nothing to generate.", file=sys.stderr)
         return 0  # not an error; the workflow simply opens no issue
 
-    guidelines = (REF / "x-writing-guidelines.md").read_text(encoding="utf-8")
-    examples = (REF / "x-writing-examples.md").read_text(encoding="utf-8")
-    profile = os.environ.get(
-        "ACCOUNT_PROFILE",
-        "(プロフィール未設定。一般的なビジネスパーソン向けのトーンで作成してください)",
-    )
+    style_guide = read_first([REF / "x-style-profile.md", REF / "x-writing-guidelines.md"])
+    examples = read_first([REF / "x-style-examples.md", REF / "x-writing-examples.md"])
+    if not style_guide:
+        print("No style guide found in x-manager/reference/.", file=sys.stderr)
+        return 1
+    profile = os.environ.get("ACCOUNT_PROFILE", "(no extra account context provided)")
 
-    system = f"""あなたは超優秀なX投稿文章作成のプロです。
-以下のガイドラインと成功例に厳密に従って、X（Twitter）投稿文を1つ作成してください。
-投稿文の本文だけを出力し、見出し・チェックリスト・補足説明・前置きは一切付けないこと。
+    system = f"""You are an expert X (Twitter) ghostwriter. Study the STYLE GUIDE and \
+EXAMPLE POSTS below, then write ONE original X post on the given theme.
 
-# 文章要件・NGパターン（ガイドライン）
-{guidelines}
+Rules:
+- Match the language, voice, tone, structure, length, and formatting conventions \
+shown in the style guide and examples.
+- Write original content — do not copy phrases verbatim from the examples.
+- Output ONLY the post text. No headings, no preamble, no explanations, no \
+surrounding quotes.
 
-# 成果がでた投稿例（トーン・構成・文量のお手本）
+# STYLE GUIDE
+{style_guide}
+
+# EXAMPLE POSTS
 {examples}
 """
-    user = f"""テーマ: {theme}
+    user = f"""Theme: {theme}
 
-アカウント情報:
+Account context:
 {profile}
 
-上記テーマで、ガイドラインの7要素をすべて満たすX投稿文を1つ作成してください。
-出力は投稿本文のみ。"""
+Write one X post on this theme, following the style guide. Output the post text only."""
 
     try:
         from anthropic import Anthropic
@@ -91,11 +108,10 @@ def main():
 
     OUT.mkdir(parents=True, exist_ok=True)
     body = (
-        "🤖 自動生成された下書きです。内容を確認し、問題なければ "
-        "`x-approve` ラベルを付けてください（付けると投稿されます）。\n"
-        "スキップする場合はこの Issue を閉じてください。\n\n"
-        f"**テーマ:** {theme}\n"
-        f"**文字数:** {len(post)}（※280字超は X Premium が必要）\n\n"
+        "🤖 Auto-generated draft. Review it, and if it looks good add the "
+        "**`x-approve`** label to publish it. To skip, just close this issue.\n\n"
+        f"**Theme:** {theme}\n"
+        f"**Characters:** {len(post)} (posts over 280 require X Premium)\n\n"
         "---\n\n"
         f"{MARK_START}\n{post}\n{MARK_END}\n"
     )
